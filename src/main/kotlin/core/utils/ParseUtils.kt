@@ -1,5 +1,6 @@
 package core.utils
 
+import core.CallChain
 import core.model.*
 
 fun parseCallChain(callChain: String): CallChain {
@@ -10,20 +11,22 @@ fun parseCallChain(callChain: String): CallChain {
 fun parseCall(call: String): Call {
     return when {
         call.startsWith("map{") && call.endsWith("}") -> {
-            MapCall(parseExpression(call.substringAfter("map{").dropLast(1)) ?: TODO("Error"))
+            MapCall(parseExpression(call.substringAfter("map{").dropLast(1)) ?: TODO("ParseError"))
         }
         call.startsWith("filter{") && call.endsWith("}") -> {
-            FilterCall(parseExpression(call.substringAfter("filter{").dropLast(1)) ?: TODO("Error"))
+            val condition = parseExpression(call.substringAfter("filter{").dropLast(1)) ?: TODO("ParseError")
+            if (condition !is Bool) TODO("TypeError")
+            FilterCall(condition)
         }
         else -> {
-            TODO("Error")
+            TODO("ParseError")
         }
     }
 }
 
 fun parseExpression(expr: String): Expression? {
     if (expr == "element") return Element
-    return parseConstantExpression(expr) ?: parseBinaryExpression(expr)
+    return parseConstantExpression(expr) ?: parseBinaryOperation(expr)
 }
 
 fun parseConstantExpression(cExpr: String): ConstantExpression? {
@@ -32,7 +35,7 @@ fun parseConstantExpression(cExpr: String): ConstantExpression? {
     else null
 }
 
-fun parseBinaryExpression(binExpr: String): BinaryExpression? {
+fun parseBinaryOperation(binExpr: String): BinaryOperator? {
     val regexCompl = """\(\((.*)\)([-<>=&|*+])\((.*)\)\)""".toRegex()
     val regex = """\((.*)([-<>=&|*+])(.*)\)""".toRegex()
 
@@ -41,6 +44,6 @@ fun parseBinaryExpression(binExpr: String): BinaryExpression? {
         val (l, op, r) = matchResult.destructured
         val lExpr = parseExpression(l) ?: return null
         val rExpr = parseExpression(r) ?: return null
-        BinaryExpression(lExpr, op.toOp(), rExpr)
+        safeCreate(op, lExpr, rExpr)
     } else null
 }

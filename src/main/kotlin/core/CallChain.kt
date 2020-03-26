@@ -1,6 +1,7 @@
 package core
 
 import core.model.*
+import core.utils.compWith
 
 data class CallChain(val calls: List<Call>) {
     override fun toString(): String {

@@ -36,10 +36,54 @@ fun parseConstantExpression(cExpr: String): ConstantExpression? {
 }
 
 fun parseBinaryOperation(binExpr: String): BinaryOperator? {
-    val regexCompl = """\(\((.*)\)([-<>=&|*+])\((.*)\)\)""".toRegex()
-    val regex = """\((.*)([-<>=&|*+])(.*)\)""".toRegex()
+    val ops = "-<>=&|*+"
+    val constExpr = { sg: String -> "$sg[0-9]*" }
 
-    val matchResult = regexCompl.find(binExpr) ?: regex.find(binExpr)
+    val leftElem = """\(element([$ops])(.*)\)""".toRegex()
+    var matchResult = leftElem.matchEntire(binExpr)
+    if (matchResult != null) {
+        val (op, r) = matchResult.destructured
+        val rExpr = parseExpression(r) ?: return null
+        return safeCreate(op, Element, rExpr)
+    }
+    val rightElem = """\((.*)([$ops])element\)""".toRegex()
+    matchResult = rightElem.matchEntire(binExpr)
+    if (matchResult != null) {
+        val (l, op) = matchResult.destructured
+        val lExpr = parseExpression(l) ?: return null
+        return safeCreate(op, lExpr, Element)
+    }
+
+    val twoOperations = """\((\(.*\))([$ops])(\(.*\))\)""".toRegex()
+    matchResult = twoOperations.matchEntire(binExpr)
+    if (matchResult != null) {
+        val (l, op, r) = matchResult.destructured
+        val lExpr = parseExpression(l) ?: return null
+        val rExpr = parseExpression(r) ?: return null
+        return safeCreate(op, lExpr, rExpr)
+    }
+
+    val rightConstant = { sg: String -> """\((\(.*\))([$ops])(${constExpr(sg)})\)""".toRegex() }
+    matchResult = rightConstant("-").matchEntire(binExpr) ?: rightConstant("").matchEntire(binExpr)
+    if (matchResult != null) {
+        val (l, op, r) = matchResult.destructured
+        val lExpr = parseExpression(l) ?: return null
+        return safeCreate(op, lExpr, ConstantExpression(r))
+    }
+
+    val leftConstant = { sg: String -> """\((${constExpr(sg)})([$ops])(\(.*\))\)""".toRegex() }
+    matchResult = leftConstant("-").matchEntire(binExpr) ?: leftConstant("").matchEntire(binExpr)
+    if (matchResult != null) {
+        val (l, op, r) = matchResult.destructured
+        val rExpr = parseExpression(r) ?: return null
+        return safeCreate(op, ConstantExpression(l), rExpr)
+    }
+
+    val twoConstants =
+        { sgL: String, sgR: String -> """\((${constExpr(sgL)})([$ops])(${constExpr(sgR)})\)""".toRegex() }
+    matchResult =
+        twoConstants("-", "-").matchEntire(binExpr) ?: twoConstants("", "-").matchEntire(binExpr) ?:
+                twoConstants("-", "").matchEntire(binExpr) ?: twoConstants("", "").matchEntire(binExpr)
     return if (matchResult != null) {
         val (l, op, r) = matchResult.destructured
         val lExpr = parseExpression(l) ?: return null

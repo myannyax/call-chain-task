@@ -1,7 +1,7 @@
 package core
 
 import core.model.*
-import core.utils.compWith
+import core.utils.composition
 
 data class CallChain(val calls: List<Call>) {
     override fun toString(): String {
@@ -15,13 +15,13 @@ fun CallChain.reordered(): CallChain {
         mutableListOf(it.expression)
     } ?: mutableListOf()
     for (i in 1 until mapCalls.size) {
-        mapCompositions.add(mapCalls[i].expression.compWith(mapCompositions.last()))
+        mapCompositions.add(mapCalls[i].expression.composition(mapCompositions.last()))
     }
     var filterExpr: Bool? = null
     var currMap: Int? = null
     for (i in calls) {
         if (i is FilterCall) {
-            val func = currMap?.let { i.condition.compWith(mapCompositions[it]) } ?: i.condition
+            val func = currMap?.let { i.condition.composition(mapCompositions[it]) } ?: i.condition
             if (func !is Bool) TODO("TypeError")
             filterExpr = filterExpr?.let { And(it, func) } ?: func
         } else currMap = currMap?.inc() ?: 0

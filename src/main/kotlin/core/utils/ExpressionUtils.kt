@@ -48,13 +48,13 @@ fun safeCreate(op: String, l: Expression, r: Expression): BinaryOperator {
     }
 }
 
-fun Expression.compWith(expr: Expression): Expression {
+fun Expression.composition(expr: Expression): Expression {
     return when (this) {
         is Element -> expr
         is ConstantExpression -> this
         is BinaryOperator -> {
-            val lc = l.compWith(expr)
-            val rc = r.compWith(expr)
+            val lc = l.composition(expr)
+            val rc = r.composition(expr)
             when (this) {
                 is Plus -> safeCreate("+", lc, rc)
                 is Minus -> safeCreate("-", lc, rc)
@@ -64,6 +64,7 @@ fun Expression.compWith(expr: Expression): Expression {
                 is Eq -> safeCreate("=", lc, rc)
                 is And -> safeCreate("&", lc, rc)
                 is Or -> safeCreate("|", lc, rc)
+                else -> TODO("Error")
             }
         }
         else -> TODO("Error")

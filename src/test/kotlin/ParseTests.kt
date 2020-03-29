@@ -1,3 +1,4 @@
+import core.ParseException
 import core.model.*
 import core.utils.parseBinaryOperation
 import core.utils.parseConstantExpression
@@ -43,8 +44,7 @@ class ParseTests {
         assertEquals(null, parseBinaryOperation("((3+4)-+3)"))
         assertEquals(Plus(ConstantExpression("-3"), ConstantExpression("-3")), parseBinaryOperation("(-3+-3)"))
         assertEquals(null, parseBinaryOperation("((3)&(2=1))"))
-        //TODO
-        assertThrows<NotImplementedError> { parseBinaryOperation("(3&(2=1))") }
+        assertThrows<ParseException> { parseBinaryOperation("(3&(2=1))") }
     }
 
     @Test

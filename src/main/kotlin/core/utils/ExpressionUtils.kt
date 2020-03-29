@@ -1,5 +1,8 @@
 package core.utils
 
+import core.ASTException
+import core.ParseException
+import core.TypeException
 import core.model.*
 
 fun safeCreate(op: String, l: Expression, r: Expression): BinaryOperator {
@@ -7,44 +10,44 @@ fun safeCreate(op: String, l: Expression, r: Expression): BinaryOperator {
         "+" -> {
             if (l is Num && r is Num) {
                 Plus(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "-" -> {
             if (l is Num && r is Num) {
                 Minus(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "*" -> {
             if (l is Num && r is Num) {
                 Mult(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         ">" -> {
             if (l is Num && r is Num) {
                 Gt(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "<" -> {
             if (l is Num && r is Num) {
                 Lt(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "=" -> {
             if (l is Num && r is Num) {
                 Eq(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "&" -> {
             if (l is Bool && r is Bool) {
                 And(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
         "|" -> {
             if (l is Bool && r is Bool) {
                 Or(l, r)
-            } else TODO("TypeError")
+            } else throw TypeException()
         }
-        else -> TODO("Error")
+        else -> throw ParseException()
     }
 }
 
@@ -64,9 +67,9 @@ fun Expression.composition(expr: Expression): Expression {
                 is Eq -> safeCreate("=", lc, rc)
                 is And -> safeCreate("&", lc, rc)
                 is Or -> safeCreate("|", lc, rc)
-                else -> TODO("Error")
+                else -> throw ASTException()
             }
         }
-        else -> TODO("Error")
+        else -> throw ASTException()
     }
 }

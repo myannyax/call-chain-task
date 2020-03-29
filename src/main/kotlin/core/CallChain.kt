@@ -22,7 +22,7 @@ fun CallChain.reordered(): CallChain {
     for (i in calls) {
         if (i is FilterCall) {
             val func = currMap?.let { i.condition.composition(mapCompositions[it]) } ?: i.condition
-            if (func !is Bool) TODO("TypeError")
+            if (func !is Bool) throw TypeException()
             filterExpr = filterExpr?.let { And(it, func) } ?: func
         } else currMap = currMap?.inc() ?: 0
     }

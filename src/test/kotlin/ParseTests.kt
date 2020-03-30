@@ -2,6 +2,7 @@ import core.CallChain
 import core.ParseException
 import core.TypeException
 import core.model.*
+import core.reordered
 import core.utils.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -110,6 +111,78 @@ class ParseTests {
                     MapCall(Mult(Element, Element))
                 )
             ), parseCallChain("filter{(element>0)}%>%filter{(element<0)}%>%map{(element*element)}")
+        )
+    }
+
+    @Test
+    fun `test reordering`() {
+        assertEquals(
+            CallChain(
+                listOf(
+                    FilterCall(
+                        Gt(
+                            Plus(Element, ConstantExpression("10")),
+                            ConstantExpression("10")
+                        )
+                    ),
+                    MapCall(
+                        Mult(
+                            Plus(Element, ConstantExpression("10")),
+                            Plus(Element, ConstantExpression("10"))
+                        )
+                    )
+                )
+            ),
+            CallChain(
+                listOf(
+                    MapCall(Plus(Element, ConstantExpression("10"))),
+                    FilterCall(Gt(Element, ConstantExpression("10"))),
+                    MapCall(Mult(Element, Element))
+                )
+            ).reordered()
+        )
+        assertEquals(
+            CallChain(
+                listOf(
+                    FilterCall(
+                        And(
+                            Gt(Element, ConstantExpression("10")),
+                            Lt(Element, ConstantExpression("20"))
+                        )
+                    ),
+                    MapCall(Element)
+                )
+            ),
+            CallChain(
+                listOf(
+                    FilterCall(
+                        Gt(Element, ConstantExpression("10"))
+                    ),
+                    FilterCall(
+                        Lt(Element, ConstantExpression("20"))
+                    )
+                )
+            ).reordered()
+        )
+        assertEquals(
+            CallChain(
+                listOf(
+                    FilterCall(
+                        And(
+                            Gt(Element, ConstantExpression("0")),
+                            Lt(Element, ConstantExpression("0"))
+                        )
+                    ),
+                    MapCall(Mult(Element, Element))
+                )
+            ),
+            CallChain(
+                listOf(
+                    FilterCall(Gt(Element, ConstantExpression("0"))),
+                    FilterCall(Lt(Element, ConstantExpression("0"))),
+                    MapCall(Mult(Element, Element))
+                )
+            ).reordered()
         )
     }
 }

@@ -142,11 +142,12 @@ data class And(override val l: Bool, override val r: Bool) : BinaryOperator(l, r
         val sL = l.simplify() as Bool
         val sR = r.simplify() as Bool
         return if (sL == FALSE || sR == FALSE) FALSE
-        else if (sL == TRUE && sR == TRUE) TRUE
+        else if (sL == TRUE) sR
+        else if (sR == TRUE) sL
         else if (sL == sR) sR
         else if (sL is Gt && sR is Gt) {
             val left = Plus(sL.r, sR.r).asPolynomial
-            return if (left.deg == -1) FALSE
+            return if (left.deg == -1) FALSE // x < 0 & -x < 0 == FALSE
             else And(sL, sR)
         } else And(sL, sR)
     }
@@ -160,14 +161,15 @@ data class Or(override val l: Bool, override val r: Bool) : BinaryOperator(l, r,
     override fun simplify(): Bool {
         val sL = l.simplify() as Bool
         val sR = r.simplify() as Bool
-        return if (sL == FALSE && sR == FALSE) FALSE
+        return if (sL == FALSE) sR
+        else if (sR == FALSE) sL
         else if (sL == TRUE || sR == TRUE) TRUE
         else if (sL == sR) sR
         else if (sL is Gt && sR is Gt) {
             val left = Plus(sL.r, sR.r).asPolynomial
-            return if (left.deg == -1) TRUE
-            else And(sL, sR)
-        } else And(sL, sR)
+            return if (left.deg == -1) TRUE // x < 0 | -x < 0 == TRUE ++ x can't be 0 since sL and sR are simplified
+            else Or(sL, sR)
+        } else Or(sL, sR)
     }
 }
 

@@ -206,6 +206,28 @@ class ParseTests {
                 )
             ).simplify()
         )
+        assertEquals(
+            Gt(
+                Plus(
+                    ConstantExpression("5"),
+                    Element
+                ),
+                ConstantExpression("0")
+            ),
+            Or(
+                Gt(
+                    Plus(
+                        Element,
+                        ConstantExpression("5")
+                    ),
+                    ConstantExpression("0")
+                ),
+                Gt(
+                    ConstantExpression("-5"),
+                    ConstantExpression("0")
+                )
+            ).simplify()
+        )
     }
 
     @Test

@@ -73,3 +73,19 @@ fun Expression.composition(expr: Expression): Expression {
         else -> throw ASTException()
     }
 }
+
+fun Polynomial.toExpression(): Num {
+    if (deg == -1) return ConstantExpression("0")
+    var result: Num? = if (coeffs[0] == 0.toBigInteger()) null else ConstantExpression(coeffs[0].toString())
+    var elemDeg: Num = Element
+    for (i in 1 until coeffs.size) {
+        if (coeffs[i] != 0.toBigInteger()) {
+            val expr =
+                if (coeffs[i] == 1.toBigInteger()) elemDeg else Mult(elemDeg, ConstantExpression(coeffs[i].toString()))
+            result = if (result == null) expr
+            else Plus(result, expr)
+        }
+        elemDeg = Mult(Element, elemDeg)
+    }
+    return result ?: ConstantExpression("0")
+}

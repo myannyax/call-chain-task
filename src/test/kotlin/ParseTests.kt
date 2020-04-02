@@ -4,7 +4,7 @@ import core.TypeException
 import core.model.*
 import core.reordered
 import core.utils.*
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -115,20 +115,123 @@ class ParseTests {
     }
 
     @Test
+    fun `as polynomial`() {
+        assertEquals(
+            listOf(0.toBigInteger(), 1.toBigInteger()),
+            Element.asPolynomial.coeffs.toList()
+        )
+        assertEquals(
+            listOf(0.toBigInteger(), 0.toBigInteger(), 1.toBigInteger()),
+            Mult(
+                Element,
+                Element
+            ).asPolynomial.coeffs.toList()
+        )
+    }
+
+    @Test
+    fun `test simplify`() {
+        assertEquals(
+            parseExpression(
+                "(((((((-10000000+(element*-1000000))+((element*element)*300000))+" +
+                        "((element*(element*element))*30000))+((element*(element*(element*element)))*-3000))+" +
+                        "((element*(element*(element*(element*element))))*-300))+((element*(element*(element*" +
+                        "(element*(element*element)))))*10))+(element*(element*(element*(element*(element*(element*element)))))))"
+            ),
+            parseExpression("(((((((element+10)*(element+10))*(element+10))*(element+10))*(element-10))*(element-10))*(element-10))").simplify()
+        )
+        assertEquals(
+            Mult(
+                Element,
+                ConstantExpression("20")
+            ),
+            Mult(
+                Element,
+                ConstantExpression("20")
+            ).simplify()
+        )
+        assertEquals(
+            FALSE,
+            Gt(
+                ConstantExpression("5"),
+                ConstantExpression("7")
+            ).simplify()
+        )
+
+        assertEquals(
+            TRUE,
+            Lt(
+                ConstantExpression("5"),
+                ConstantExpression("7")
+            ).simplify()
+        )
+
+        assertEquals(
+            FALSE,
+            Or(
+                Lt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                ),
+                Gt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                )
+            ).simplify()
+        )
+
+        assertEquals(
+            FALSE,
+            And(
+                Lt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                ),
+                Gt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                )
+            ).simplify()
+        )
+        assertEquals(
+            FALSE,
+            Or(
+                Lt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                ),
+                Gt(
+                    ConstantExpression("5"),
+                    ConstantExpression("5")
+                )
+            ).simplify()
+        )
+    }
+
+    @Test
     fun `test reordering`() {
         assertEquals(
             CallChain(
                 listOf(
                     FilterCall(
                         Gt(
-                            Plus(Element, ConstantExpression("10")),
-                            ConstantExpression("10")
+                            Element,
+                            ConstantExpression("0")
                         )
                     ),
                     MapCall(
-                        Mult(
-                            Plus(Element, ConstantExpression("10")),
-                            Plus(Element, ConstantExpression("10"))
+                        Plus(
+                            Plus(
+                                ConstantExpression("100"),
+                                Mult(
+                                    Element,
+                                    ConstantExpression("20")
+                                )
+                            ),
+                            Mult(
+                                Element,
+                                Element
+                            )
                         )
                     )
                 )
@@ -145,10 +248,7 @@ class ParseTests {
             CallChain(
                 listOf(
                     FilterCall(
-                        And(
-                            Gt(Element, ConstantExpression("10")),
-                            Lt(Element, ConstantExpression("20"))
-                        )
+                        FALSE
                     ),
                     MapCall(Element)
                 )
@@ -168,10 +268,7 @@ class ParseTests {
             CallChain(
                 listOf(
                     FilterCall(
-                        And(
-                            Gt(Element, ConstantExpression("0")),
-                            Lt(Element, ConstantExpression("0"))
-                        )
+                        FALSE
                     ),
                     MapCall(Mult(Element, Element))
                 )

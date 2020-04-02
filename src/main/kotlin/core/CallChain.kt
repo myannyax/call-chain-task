@@ -28,8 +28,8 @@ fun CallChain.reordered(): CallChain {
     }
     return CallChain(
         listOf(
-            FilterCall(filterExpr ?: TRUE),
-            MapCall(mapCompositions.lastOrNull() ?: Element)
+            FilterCall(filterExpr?.simplify() as Bool? ?: TRUE),
+            MapCall(mapCompositions.lastOrNull()?.simplify() ?: Element)
         )
     )
 }

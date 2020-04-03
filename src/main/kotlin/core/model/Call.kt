@@ -4,7 +4,7 @@ import core.utils.Polynomial
 
 sealed class Call
 
-data class MapCall(val expression: Expression) : Call() {
+data class MapCall(val expression: Num) : Call() {
     override fun toString(): String {
         return "map{$expression}"
     }

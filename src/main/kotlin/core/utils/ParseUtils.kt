@@ -13,7 +13,9 @@ fun parseCallChain(callChain: String): CallChain {
 fun parseCall(call: String): Call {
     return when {
         call.startsWith("map{") && call.endsWith("}") -> {
-            MapCall(parseExpression(call.substringAfter("map{").dropLast(1)))
+            val expression = parseExpression(call.substringAfter("map{").dropLast(1))
+            if (expression !is Num) throw TypeException()
+            MapCall(expression)
         }
         call.startsWith("filter{") && call.endsWith("}") -> {
             val condition = parseExpression(call.substringAfter("filter{").dropLast(1))

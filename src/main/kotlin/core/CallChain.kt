@@ -15,7 +15,7 @@ fun CallChain.reordered(): CallChain {
         mutableListOf(it.expression)
     } ?: mutableListOf()
     for (i in 1 until mapCalls.size) {
-        mapCompositions.add(mapCalls[i].expression.composition(mapCompositions.last()))
+        mapCompositions.add(mapCalls[i].expression.composition(mapCompositions.last()) as Num)
     }
     var filterExpr: Bool? = null
     var currMap: Int? = null
@@ -32,7 +32,6 @@ fun CallChain.reordered(): CallChain {
             FilterCall(filterExpr?.simplify() as Bool? ?: TRUE),
             when(mapCall) {
                 is Num-> MapCallPoly(mapCall.asPolynomial)
-                is Bool -> MapCall(mapCall.simplify())
                 else -> MapCall(Element)
             }
         )

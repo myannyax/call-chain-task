@@ -75,6 +75,7 @@ class ParseTests {
         )
 
         assertThrows<TypeException> { parseCall("filter{(element+10)}") }
+        assertThrows<TypeException> { parseCall("map{(1=2)}") }
     }
 
     @Test

@@ -118,14 +118,14 @@ class ParseTests {
     fun `as polynomial`() {
         assertEquals(
             listOf(0.toBigInteger(), 1.toBigInteger()),
-            Element.asPolynomial.coeffs.toList()
+            Element.toPolynomial().coeffs.toList()
         )
         assertEquals(
             listOf(0.toBigInteger(), 0.toBigInteger(), 1.toBigInteger()),
             Mult(
                 Element,
                 Element
-            ).asPolynomial.coeffs.toList()
+            ).toPolynomial().coeffs.toList()
         )
     }
 
@@ -270,7 +270,23 @@ class ParseTests {
             CallChain(
                 listOf(
                     FilterCall(
-                        FALSE
+                        And(
+                            Gt(
+                                Plus(
+                                    ConstantExpression("-10"),
+                                    Element
+                                ), ConstantExpression("0")
+                            ),
+                            Gt(
+                                Plus(
+                                    ConstantExpression("20"),
+                                    Mult(
+                                        Element,
+                                        ConstantExpression("-1")
+                                    )
+                                ), ConstantExpression("0")
+                            )
+                        )
                     ),
                     MapCall(Element)
                 )

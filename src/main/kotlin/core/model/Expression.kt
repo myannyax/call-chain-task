@@ -10,7 +10,11 @@ interface Expression {
 interface Bool : Expression
 
 interface Num : Expression {
-    val asPolynomial: Polynomial
+    fun toPolynomial(): Polynomial
+
+    override fun simplify(): Num {
+        return toPolynomial().toExpression()
+    }
 }
 
 val TRUE = Eq(ConstantExpression("1"), ConstantExpression("1"))
@@ -22,11 +26,7 @@ data class ConstantExpression(val number: String) : Num {
         return number
     }
 
-    override val asPolynomial = Polynomial(number.toBigInteger(), 0)
-
-    override fun simplify(): Num {
-        return asPolynomial.toExpression()
-    }
+    override fun toPolynomial() = Polynomial(number.toBigInteger(), 0)
 }
 
 object Element : Num {
@@ -34,11 +34,7 @@ object Element : Num {
         return "element"
     }
 
-    override val asPolynomial = Polynomial(1.toBigInteger(), 1)
-
-    override fun simplify(): Num {
-        return asPolynomial.toExpression()
-    }
+    override fun toPolynomial() = Polynomial(1.toBigInteger(), 1)
 }
 
 open class BinaryOperator(open val l: Expression, open val r: Expression, private val name: String) : Expression {
@@ -56,14 +52,14 @@ data class Plus(override val l: Num, override val r: Num) : BinaryOperator(l, r,
         return super.toString()
     }
 
-    override val asPolynomial = run {
-        val lPoly = l.asPolynomial
-        val rPoly = r.asPolynomial
-        lPoly + rPoly
+    override fun toPolynomial(): Polynomial {
+        val lPoly = l.toPolynomial()
+        val rPoly = r.toPolynomial()
+        return lPoly + rPoly
     }
 
     override fun simplify(): Num {
-        return asPolynomial.toExpression()
+        return super<Num>.simplify()
     }
 }
 
@@ -72,14 +68,14 @@ data class Minus(override val l: Num, override val r: Num) : BinaryOperator(l, r
         return super.toString()
     }
 
-    override val asPolynomial = run {
-        val lPoly = l.asPolynomial
-        val rPoly = r.asPolynomial
-        lPoly - rPoly
+    override fun toPolynomial(): Polynomial {
+        val lPoly = l.toPolynomial()
+        val rPoly = r.toPolynomial()
+        return lPoly - rPoly
     }
 
     override fun simplify(): Num {
-        return asPolynomial.toExpression()
+        return super<Num>.simplify()
     }
 }
 
@@ -88,27 +84,31 @@ data class Mult(override val l: Num, override val r: Num) : BinaryOperator(l, r,
         return super.toString()
     }
 
-    override val asPolynomial = run {
-        val lPoly = l.asPolynomial
-        val rPoly = r.asPolynomial
-        lPoly * rPoly
+    override fun toPolynomial(): Polynomial {
+        val lPoly = l.toPolynomial()
+        val rPoly = r.toPolynomial()
+        return lPoly * rPoly
     }
 
     override fun simplify(): Num {
-        return asPolynomial.toExpression()
+        return super<Num>.simplify()
     }
 }
 
 data class Gt(override val l: Num, override val r: Num) : BinaryOperator(l, r, ">"), Bool {
+    val leftPoly: Polynomial by lazy { l.toPolynomial() }
+
     override fun toString(): String {
         return super.toString()
     }
 
     override fun simplify(): Bool {
-        val left = Minus(l, r).asPolynomial
-        if (left.deg == -1) return FALSE
-        if (left.deg == 0) return if (left.coeffs[0] > 0.toBigInteger()) TRUE else FALSE
-        return Gt(left.toExpression(), ConstantExpression("0"))
+        val s = Gt(Minus(l, r).simplify(), ConstantExpression("0"))
+        return when (s.leftPoly.deg) {
+            -1 -> FALSE // 0 > 0 == FALSE
+            0 -> return if (s.leftPoly.coeffs[0] > 0.toBigInteger()) TRUE else FALSE // const > 0
+            else -> return s
+        }
     }
 }
 
@@ -123,13 +123,19 @@ data class Lt(override val l: Num, override val r: Num) : BinaryOperator(l, r, "
 }
 
 data class Eq(override val l: Num, override val r: Num) : BinaryOperator(l, r, "="), Bool {
+    val leftPoly: Polynomial by lazy { l.toPolynomial() }
+
     override fun toString(): String {
         return super.toString()
     }
 
     override fun simplify(): Bool {
-        val left = Minus(r, l).asPolynomial
-        return if (left.deg == -1) TRUE else this
+        val s = Eq(Minus(l, r).simplify(), ConstantExpression("0"))
+        return when (s.leftPoly.deg) {
+            -1 -> TRUE // 0 = 0 == TRUE
+            0 -> return if (s.leftPoly.coeffs[0] == 0.toBigInteger()) TRUE else FALSE // const = 0
+            else -> return s
+        }
     }
 }
 
@@ -146,8 +152,13 @@ data class And(override val l: Bool, override val r: Bool) : BinaryOperator(l, r
         else if (sR == TRUE) sL
         else if (sL == sR) sR
         else if (sL is Gt && sR is Gt) {
-            val left = Plus(sL.r, sR.r).asPolynomial
-            return if (left.deg == -1) FALSE // x < 0 & -x < 0 == FALSE
+            return when {
+                sL.leftPoly.negEq(sR.leftPoly) -> FALSE // x > 0 & -x > 0 == FALSE
+                sL.leftPoly.eq(sR.leftPoly) -> return sL // x > 0 & x > 0 == x < 0
+                else -> And(sL, sR)
+            }
+        } else if (sL is Eq && sR is Eq) {
+            return if (sL.leftPoly.negEq(sR.leftPoly) || sL.leftPoly.eq(sR.leftPoly)) sL // x = 0 & -x = 0 == x = 0         x = 0 & x = 0 == x = 0
             else And(sL, sR)
         } else And(sL, sR)
     }
@@ -166,8 +177,13 @@ data class Or(override val l: Bool, override val r: Bool) : BinaryOperator(l, r,
         else if (sL == TRUE || sR == TRUE) TRUE
         else if (sL == sR) sR
         else if (sL is Gt && sR is Gt) {
-            val left = Plus(sL.r, sR.r).asPolynomial
-            return if (left.deg == -1) TRUE // x < 0 | -x < 0 == TRUE ++ x can't be 0 since sL and sR are simplified
+            return when {
+                sL.leftPoly.negEq(sR.leftPoly) -> TRUE // x > 0 | -x > 0 == TRUE ++ x can't be 0 since sL and sR are simplified
+                sL.leftPoly.eq(sR.leftPoly) -> return sL // x > 0 | x > 0 == x > 0
+                else -> Or(sL, sR)
+            }
+        } else if (sL is Eq && sR is Eq) {
+            return if (sL.leftPoly.negEq(sR.leftPoly) || sL.leftPoly.eq(sR.leftPoly)) sL // x = 0 | -x = 0 == x = 0         x = 0 | x = 0 == x = 0
             else Or(sL, sR)
         } else Or(sL, sR)
     }

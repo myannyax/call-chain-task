@@ -12,6 +12,18 @@ class Polynomial(a: BigInteger, b: Int) {
     var deg = degree()
         private set
 
+    fun eq(b: Polynomial): Boolean {
+        if (deg != b.deg) return false
+        for (i in 0..deg) if (coeffs[i] != b.coeffs[i]) return false
+        return true
+    }
+
+    fun negEq(b: Polynomial): Boolean {
+        if (deg != b.deg) return false
+        for (i in 0..deg) if (coeffs[i] != -b.coeffs[i]) return false
+        return true
+    }
+
     private fun degree(): Int {
         var d = -1
         for (i in coeffs.indices) if (coeffs[i] !== 0.toBigInteger()) d = i

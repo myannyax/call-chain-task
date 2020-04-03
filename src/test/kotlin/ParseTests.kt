@@ -7,6 +7,7 @@ import core.utils.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigInteger
 
 class ParseTests {
     @Test
@@ -130,25 +131,27 @@ class ParseTests {
     }
 
     @Test
-    fun `test simplify`() {
+    fun `test toPolynomial and simplify`() {
         assertEquals(
-            parseExpression(
-                "(((((((-10000000+(element*-1000000))+((element*element)*300000))+" +
-                        "((element*(element*element))*30000))+((element*(element*(element*element)))*-3000))+" +
-                        "((element*(element*(element*(element*element))))*-300))+((element*(element*(element*" +
-                        "(element*(element*element)))))*10))+(element*(element*(element*(element*(element*(element*element)))))))"
-            ),
-            parseExpression("(((((((element+10)*(element+10))*(element+10))*(element+10))*(element-10))*(element-10))*(element-10))").simplify()
+            Polynomial(
+                listOf(
+                    -10000000,
+                    -1000000,
+                    300000,
+                    30000,
+                    -3000,
+                    -300,
+                    10,
+                    1
+                ).map { it.toBigInteger() } as MutableList<BigInteger>),
+            (parseExpression("(((((((element+10)*(element+10))*(element+10))*(element+10))*(element-10))*(element-10))*(element-10))") as Num).toPolynomial()
         )
         assertEquals(
+            Polynomial(listOf(0, 20).map { it.toBigInteger() } as MutableList<BigInteger>),
             Mult(
                 Element,
                 ConstantExpression("20")
-            ),
-            Mult(
-                Element,
-                ConstantExpression("20")
-            ).simplify()
+            ).toPolynomial()
         )
         assertEquals(
             FALSE,
@@ -207,12 +210,8 @@ class ParseTests {
             ).simplify()
         )
         assertEquals(
-            Gt(
-                Plus(
-                    ConstantExpression("5"),
-                    Element
-                ),
-                ConstantExpression("0")
+            GtPoly(
+                Polynomial(listOf(5, 1).map { it.toBigInteger() } as MutableList<BigInteger>)
             ),
             Or(
                 Gt(
@@ -246,8 +245,8 @@ class ParseTests {
                             Plus(
                                 ConstantExpression("100"),
                                 Mult(
-                                    Element,
-                                    ConstantExpression("20")
+                                    ConstantExpression("20"),
+                                    Element
                                 )
                             ),
                             Mult(
@@ -257,14 +256,14 @@ class ParseTests {
                         )
                     )
                 )
-            ),
+            ).toString(),
             CallChain(
                 listOf(
                     MapCall(Plus(Element, ConstantExpression("10"))),
                     FilterCall(Gt(Element, ConstantExpression("10"))),
                     MapCall(Mult(Element, Element))
                 )
-            ).reordered()
+            ).reordered().toString()
         )
         assertEquals(
             CallChain(
@@ -281,8 +280,8 @@ class ParseTests {
                                 Plus(
                                     ConstantExpression("20"),
                                     Mult(
-                                        Element,
-                                        ConstantExpression("-1")
+                                        ConstantExpression("-1"),
+                                        Element
                                     )
                                 ), ConstantExpression("0")
                             )
@@ -290,7 +289,7 @@ class ParseTests {
                     ),
                     MapCall(Element)
                 )
-            ),
+            ).toString(),
             CallChain(
                 listOf(
                     FilterCall(
@@ -300,7 +299,7 @@ class ParseTests {
                         Lt(Element, ConstantExpression("20"))
                     )
                 )
-            ).reordered()
+            ).reordered().toString()
         )
         assertEquals(
             CallChain(
@@ -310,14 +309,14 @@ class ParseTests {
                     ),
                     MapCall(Mult(Element, Element))
                 )
-            ),
+            ).toString(),
             CallChain(
                 listOf(
                     FilterCall(Gt(Element, ConstantExpression("0"))),
                     FilterCall(Lt(Element, ConstantExpression("0"))),
                     MapCall(Mult(Element, Element))
                 )
-            ).reordered()
+            ).reordered().toString()
         )
     }
 

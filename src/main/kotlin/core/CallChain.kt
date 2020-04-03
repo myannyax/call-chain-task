@@ -26,10 +26,15 @@ fun CallChain.reordered(): CallChain {
             filterExpr = filterExpr?.let { And(it, func) } ?: func
         } else currMap = currMap?.inc() ?: 0
     }
+    val mapCall: Expression? = mapCompositions.lastOrNull()
     return CallChain(
         listOf(
             FilterCall(filterExpr?.simplify() as Bool? ?: TRUE),
-            MapCall(mapCompositions.lastOrNull()?.simplify() ?: Element)
+            when(mapCall) {
+                is Num-> MapCallPoly(mapCall.toPolynomial())
+                is Bool -> MapCall(mapCall.simplify())
+                else -> MapCall(Element)
+            }
         )
     )
 }

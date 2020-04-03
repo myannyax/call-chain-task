@@ -3,11 +3,11 @@ package core.utils
 import java.math.BigInteger
 import kotlin.math.max
 
-class Polynomial(a: BigInteger, b: Int) {
-    var coeffs: MutableList<BigInteger> = MutableList(b + 1) { 0.toBigInteger() }.run {
+data class Polynomial(val coeffs: MutableList<BigInteger>) {
+    constructor(a: BigInteger, b: Int) : this(MutableList(b + 1) { 0.toBigInteger() }.run {
         this[b] = a
         this
-    }
+    })
 
     var deg = degree()
         private set
@@ -62,5 +62,29 @@ class Polynomial(a: BigInteger, b: Int) {
         }
         c.deg = c.degree()
         return c
+    }
+
+    override fun toString(): String {
+        if (deg == -1) return "0"
+        return buildString {
+            var elemStr = ""
+            var cnt = 0
+            var fst = true
+            for (i in 0..deg) {
+                if (coeffs[i] != 0.toBigInteger()) {
+                    if (elemStr == "") append(coeffs[i])
+                    else {
+                        val expr = if (coeffs[i] == 1.toBigInteger()) elemStr else "(${coeffs[i]}*$elemStr)"
+                        if (!fst) {
+                            append("+$expr)")
+                            cnt++
+                        } else append(expr)
+                    }
+                    fst = false
+                }
+                elemStr = if (elemStr == "") "element" else "(element*$elemStr)"
+            }
+            insert(0, "(".repeat(cnt))
+        }
     }
 }

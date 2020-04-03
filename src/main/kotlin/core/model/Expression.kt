@@ -9,7 +9,7 @@ interface Bool : Expression {
 }
 
 interface Num : Expression {
-    fun toPolynomial(): Polynomial
+    val asPolynomial: Polynomial
 }
 
 val TRUE = Eq(ConstantExpression("1"), ConstantExpression("1"))
@@ -21,7 +21,7 @@ data class ConstantExpression(val number: String) : Num {
         return number
     }
 
-    override fun toPolynomial() = Polynomial(number.toBigInteger(), 0)
+    override val asPolynomial = Polynomial(number.toBigInteger(), 0)
 }
 
 object Element : Num {
@@ -29,7 +29,7 @@ object Element : Num {
         return "element"
     }
 
-    override fun toPolynomial() = Polynomial(1.toBigInteger(), 1)
+    override val asPolynomial = Polynomial(1.toBigInteger(), 1)
 }
 
 open class BinaryOperator(open val l: Expression, open val r: Expression, private val name: String) : Expression {
@@ -43,10 +43,10 @@ data class Plus(override val l: Num, override val r: Num) : BinaryOperator(l, r,
         return super.toString()
     }
 
-    override fun toPolynomial(): Polynomial {
-        val lPoly = l.toPolynomial()
-        val rPoly = r.toPolynomial()
-        return lPoly + rPoly
+    override val asPolynomial = run {
+        val lPoly = l.asPolynomial
+        val rPoly = r.asPolynomial
+        lPoly + rPoly
     }
 }
 
@@ -55,10 +55,10 @@ data class Minus(override val l: Num, override val r: Num) : BinaryOperator(l, r
         return super.toString()
     }
 
-    override fun toPolynomial(): Polynomial {
-        val lPoly = l.toPolynomial()
-        val rPoly = r.toPolynomial()
-        return lPoly - rPoly
+    override val asPolynomial = run {
+        val lPoly = l.asPolynomial
+        val rPoly = r.asPolynomial
+        lPoly - rPoly
     }
 }
 
@@ -67,10 +67,10 @@ data class Mult(override val l: Num, override val r: Num) : BinaryOperator(l, r,
         return super.toString()
     }
 
-    override fun toPolynomial(): Polynomial {
-        val lPoly = l.toPolynomial()
-        val rPoly = r.toPolynomial()
-        return lPoly * rPoly
+    override val asPolynomial = run {
+        val lPoly = l.asPolynomial
+        val rPoly = r.asPolynomial
+        lPoly * rPoly
     }
 }
 
@@ -85,7 +85,7 @@ data class Gt(override val l: Num, override val r: Num) : BinaryOperator(l, r, "
 }
 
 data class GtPoly(val poly: Polynomial) : Bool {
-    constructor(l: Num, r: Num) : this(Minus(l, r).toPolynomial())
+    constructor(l: Num, r: Num) : this(Minus(l, r).asPolynomial)
 
     override fun simplify(): Bool {
         return when (poly.deg) {
@@ -121,7 +121,7 @@ data class Eq(override val l: Num, override val r: Num) : BinaryOperator(l, r, "
 }
 
 data class EqPoly(val poly: Polynomial) : Bool {
-    constructor(l: Num, r: Num) : this(Minus(l, r).toPolynomial())
+    constructor(l: Num, r: Num) : this(Minus(l, r).asPolynomial)
 
     override fun simplify(): Bool {
         return when (poly.deg) {
@@ -152,7 +152,7 @@ data class And(override val l: Bool, override val r: Bool) : BinaryOperator(l, r
         else if (sL is GtPoly && sR is GtPoly) {
             return when {
                 sL.poly.negEq(sR.poly) -> FALSE // x > 0 & -x > 0 == FALSE
-                sL.poly.eq(sR.poly) -> return sL // x > 0 & x > 0 == x < 0
+                sL.poly.eq(sR.poly) -> return sL // x > 0 & x > 0 == x > 0
                 else -> And(sL, sR)
             }
         } else if (sL is EqPoly && sR is EqPoly) {

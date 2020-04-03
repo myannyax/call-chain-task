@@ -31,7 +31,7 @@ fun CallChain.reordered(): CallChain {
         listOf(
             FilterCall(filterExpr?.simplify() as Bool? ?: TRUE),
             when(mapCall) {
-                is Num-> MapCallPoly(mapCall.toPolynomial())
+                is Num-> MapCallPoly(mapCall.asPolynomial)
                 is Bool -> MapCall(mapCall.simplify())
                 else -> MapCall(Element)
             }

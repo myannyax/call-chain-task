@@ -2,7 +2,6 @@ import core.CallChain
 import core.ParseException
 import core.TypeException
 import core.model.*
-import core.reordered
 import core.utils.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

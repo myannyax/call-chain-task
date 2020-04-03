@@ -30,8 +30,8 @@ fun CallChain.reordered(): CallChain {
     return CallChain(
         listOf(
             FilterCall(filterExpr?.simplify() as Bool? ?: TRUE),
-            when(mapCall) {
-                is Num-> MapCallPoly(mapCall.asPolynomial)
+            when (mapCall) {
+                is Num -> MapCallPoly(mapCall.asPolynomial)
                 else -> MapCall(Element)
             }
         )
